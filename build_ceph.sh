@@ -1,17 +1,6 @@
 #!/bin/bash
 
-#...Ceph release to install
-ceph_version="octopus"
-
-#...Option to automatically configure all disks as OSDs
-do_osd_configure=1
-
-#...Single node server
-single_node_cluster=1
-
-#...Monitor ip (automatically determined if single_node_cluster)
-monip=192.168.0.1
-
+source config.sh
 
 if [ "$EUID" != 0 ] ; then
     sudo "$0" "$@"
@@ -28,7 +17,7 @@ echo "# Step 0: Installing Dependencies #"
 echo "#---------------------------------#"
 dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
 dnf update
-dnf install docker-ce docker-ce-cli containerd.io -y
+dnf install docker-ce docker-ce-cli containerd.io -y --allowerasing
 systemctl enable docker
 systemctl start docker
 dnf install chrony python3 lvm2 -y
@@ -63,9 +52,6 @@ echo "#----------------------------------#"
 echo "# Step 4: Set up the monitor       #"
 echo "#----------------------------------#"
 mkdir -p /etc/ceph
-if [ $single_node_cluster == 1 ] ; then
-    monip=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | tail -n1)
-fi
 ./cephadm bootstrap --mon-ip $monip 
 
 
@@ -79,4 +65,12 @@ if [ $do_osd_configure == 1 ] ; then
     ceph orch apply osd --all-available-devices
 fi
 
+#...Generate the admin key file
+ceph auth get-key client.admin > /etc/ceph/admin.secret
 
+#...Geneate an erasure coded 2-1 rule
+if [ $single_node_cluster == 1 ] 
+    ceph osd erasure-code-profile set erasure_2_1 plugin=jerasure k=2 m=1 crush-failure-domain=osd
+else
+    ceph osd erasure-code-profile set erasure_2_1 plugin=jerasure k=2 m=1 crush-failure-domain=host
+fi
