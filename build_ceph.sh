@@ -39,6 +39,7 @@ chmod +x cephadm
 echo "#-------------------------------------#"
 echo "# Step 3: Installing Ceph: $ceph_version"
 echo "#-------------------------------------#"
+
 ./cephadm add-repo --release $ceph_version
 ./cephadm install
 
@@ -72,3 +73,11 @@ if [ $single_node_cluster == 1 ]
 else
     ceph osd erasure-code-profile set "erasure_"$k"_"$m plugin=jerasure k=$k m=$m crush-failure-domain=host
 fi
+
+echo "#-------------------------------------#"
+echo "# Step 7: Disabling dasboard SSL      #"
+echo "#-------------------------------------#"
+ceph config set mgr mgr/dashboard/ssl false
+ceph mgr module disable dashboard
+ceph mgr module enable dashboard
+echo "[INFO]: Dashboard available at: "$monip":8080"
