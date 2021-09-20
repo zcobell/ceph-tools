@@ -1,7 +1,6 @@
 #!/bin/bash
 
-poolname=data_ec21
-fsname=ceph-data
+source config.sh
 
 #...Create the base pool
 ceph osd pool create ceph_metadata 64 64 replicated
