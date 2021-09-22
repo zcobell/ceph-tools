@@ -77,6 +77,7 @@ fi
 echo "#-------------------------------------#"
 echo "# Step 7: Disabling dasboard SSL      #"
 echo "#-------------------------------------#"
+ceph dashboard set-grafana-api-ssl-verify False
 ceph config set mgr mgr/dashboard/ssl false
 ceph mgr module disable dashboard
 ceph mgr module enable dashboard
